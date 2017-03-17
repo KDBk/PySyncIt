@@ -40,12 +40,16 @@ class Server(Node):
     def req_push_file(self, filedata, source_uname, source_ip, source_port):
         """Mark this file as to be notified to clients - this file 'filename' has been modified, pull the latest copy"""
         logger.debug("server filedata %s %s",filedata['name'], filedata.keys())
-        my_file = Node.get_dest_path(filedata['name'], self.username)
-        #check if there is a conflict
-        if self.check_collision(filedata):
-            server_filename = "%s.backup.%s.%s.%s:%s"%(my_file, filedata['time'], source_uname, source_ip, source_port)
-        else:
-            server_filename = my_file
+        # my_file = Node.get_dest_path(filedata['name'], self.username)
+        # #check if there is a conflict
+        # if self.check_collision(filedata):
+        #     server_filename = "%s.backup.%s.%s.%s:%s"%(my_file, filedata['time'], source_uname, source_ip, source_port)
+        # else:
+        #     server_filename = my_file
+
+        #Temporary replace by daidv.
+        my_file = "{}{}".format(self.watch_dirs[0], filedata['name'])
+        server_filename = my_file
 
         logger.debug("server filename %s returned for file %s", server_filename, filedata['name'])
         return server_filename

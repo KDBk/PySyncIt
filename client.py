@@ -113,6 +113,17 @@ class Client(Node):
                     logger.debug("modified before client was running %s", file_path)
                     self.mfiles.add(file_path, mtime)
 
+    def format_file_name(self, file_name):
+        """
+        Remove dir in full path of file
+        author: daidv
+        :param file_name:
+        :return:
+        """
+        for di in self.watch_dirs:
+            if di in file_name:
+                return file_name.replace(di, '')
+
     def sync_files(self):
         """Sync all the files present in the mfiles set and push this set"""
         mfiles = self.mfiles
@@ -123,6 +134,9 @@ class Client(Node):
                     filename = filedata.name
                     logger.info("push filedata object to server %s" , filedata)
                     server_uname, server_ip, server_port = self.server
+                    # Add by daidv, only send file name alter for full path file to server
+                    filedata.name = self.format_file_name(filedata.name)
+
                     dest_file = rpc.req_push_file(server_ip, server_port, filedata, self.username, self.ip, self.port)
                     logger.debug("destination file name %s", dest_file)
                     if dest_file is None:
