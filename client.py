@@ -63,7 +63,9 @@ class Client(Node):
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
 #        dest_file = Node.get_dest_path(filename, dest_uname)
-        proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
+        if filename is None:
+		pass
+	proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
         return push_status
@@ -120,10 +122,13 @@ class Client(Node):
         :param file_name:
         :return:
         """
-        for di in self.watch_dirs:
-            if di in file_name:
-                return file_name.replace(di, '')
-
+	if file_name:
+	        for di in self.watch_dirs:
+	            if di in file_name:
+	                return file_name.replace(di, '')
+	else:
+		return None
+	
     def sync_files(self):
         """Sync all the files present in the mfiles set and push this set"""
         mfiles = self.mfiles
@@ -132,6 +137,8 @@ class Client(Node):
                 time.sleep(10)
                 for filedata in mfiles.list():
                     filename = filedata.name
+		    if not filename:
+			continue
                     logger.info("push filedata object to server %s" , filedata)
                     server_uname, server_ip, server_port = self.server
                     # Add by daidv, only send file name alter for full path file to server
