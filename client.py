@@ -63,8 +63,6 @@ class Client(Node):
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
 #        dest_file = Node.get_dest_path(filename, dest_uname)
-        if filename is None:
-		pass
 	proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
@@ -107,7 +105,7 @@ class Client(Node):
                 break
 
             for filename in filenames:
-                file_path = os.path.join(dirname,filename)
+		file_path = os.path.join(dirname,filename)
                 logger.debug("checked file if modified before client was running: %s", file_path)
                 mtime = os.path.getmtime(file_path)
                 #TODO save and restore last_synctime
