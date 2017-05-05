@@ -1,53 +1,95 @@
 import logging
 import rpc
-from pyinotify import WatchManager, ProcessEvent
-import pyinotify
+# from pyinotify import WatchManager, ProcessEvent
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+# import pyinotify
 import subprocess
 import time
 import threading
 import os
 from node import Node
 from persistence import FileData, FilesPersistentSet
+import shlex
 
-__author__ = 'dushyant'
+__author__ = 'daidv'
 
 logger = logging.getLogger('syncIt')
 
 
-#Find which files to sync
-class PTmp(ProcessEvent):
-    """Find which files to sync"""
-
+class Handler(FileSystemEventHandler):
     def __init__(self, mfiles, rfiles, pulledfiles):
         self.mfiles = mfiles
         self.rfiles = rfiles
         self.pulled_files = pulledfiles
 
-    def process_IN_CREATE(self, event):
-        filename = os.path.join(event.path, event.name)
-        if not self.pulled_files.__contains__(filename):
-            self.mfiles.add(filename, time.time())
-            logger.info("Created file: %s" ,  filename)
-        else:
-            pass
-            self.pulled_files.remove(filename)
+    @staticmethod
+    def on_any_event(event):
+        if event.is_directory:
+            return None
 
-    def process_IN_DELETE(self, event):
-        filename = os.path.join(event.path, event.name)
-        self.rfiles.add(filename)
-        try:
-            self.mfiles.remove(filename)
-        except KeyError:
-            pass
-        logger.info("Removed file: %s" , filename)
+        elif event.event_type == 'created':
+            filename = event.src_path
+            if not self.pulled_files.__contains__(filename):
+                self.mfiles.add(filename, time.time())
+                logger.info("Created file: %s", filename)
+            else:
+                pass
+                self.pulled_files.remove(filename)
 
-    def process_IN_MODIFY(self, event):
-        filename = os.path.join(event.path, event.name)
-        if not self.pulled_files.__contains__(filename):
-            self.mfiles.add(filename, time.time())
-            logger.info("Modified file: %s" , filename)
-        else:
-            self.pulled_files.remove(filename)
+        elif event.event_type == 'modified':
+            filename = event.src_path
+            if not self.pulled_files.__contains__(filename):
+                self.mfiles.add(filename, time.time())
+                logger.info("Modified file: %s", filename)
+            else:
+                self.pulled_files.remove(filename)
+
+        elif event.event_type == 'deleted':
+            filename = event.src_path
+            self.rfiles.add(filename)
+            try:
+                self.mfiles.remove(filename)
+            except KeyError:
+                pass
+            logger.info("Removed file: %s", filename)
+
+
+# # Find which files to sync
+# class PTmp(ProcessEvent):
+#     """Find which files to sync"""
+#
+#     def __init__(self, mfiles, rfiles, pulledfiles):
+#         self.mfiles = mfiles
+#         self.rfiles = rfiles
+#         self.pulled_files = pulledfiles
+#
+#     def process_IN_CREATE(self, event):
+#         filename = os.path.join(event.path, event.name)
+#         if not self.pulled_files.__contains__(filename):
+#             self.mfiles.add(filename, time.time())
+#             logger.info("Created file: %s", filename)
+#         else:
+#             pass
+#             self.pulled_files.remove(filename)
+#
+#     def process_IN_DELETE(self, event):
+#         filename = os.path.join(event.path, event.name)
+#         self.rfiles.add(filename)
+#         try:
+#             self.mfiles.remove(filename)
+#         except KeyError:
+#             pass
+#         logger.info("Removed file: %s", filename)
+#
+#     def process_IN_MODIFY(self, event):
+#         filename = os.path.join(event.path, event.name)
+#         if not self.pulled_files.__contains__(filename):
+#             self.mfiles.add(filename, time.time())
+#             logger.info("Modified file: %s", filename)
+#         else:
+#             self.pulled_files.remove(filename)
+
 
 class Client(Node):
     """Client class"""
@@ -55,15 +97,18 @@ class Client(Node):
     def __init__(self, role, ip, port, uname, watch_dirs, server):
         super(Client, self).__init__(role, ip, port, uname, watch_dirs)
         self.server = server
-        self.mfiles = FilesPersistentSet(pkl_filename = 'client.pkl') #set() #set of modified files
-        self.rfiles = set() #set of removed files
+        self.mfiles = FilesPersistentSet(pkl_filename='client.pkl')  # set() #set of modified files
+        self.rfiles = set()  # set of removed files
         self.pulled_files = set()
         self.server_available = True
 
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
-#        dest_file = Node.get_dest_path(filename, dest_uname)
-	proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
+        # dest_file = Node.get_dest_path(filename, dest_uname)
+        command = "echo y | pscp -l daidv -pw 1 {} {}@{}:{}".format(
+            filename, dest_uname, dest_ip, dest_file)
+        # proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
+        proc = subprocess.Popen(shlex.split(command))
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
         return push_status
@@ -79,7 +124,7 @@ class Client(Node):
     def get_public_key(self):
         """Return public key of this client"""
         pubkey = None
-        pubkey_dirname = os.path.join("/home",self.username,".ssh")
+        pubkey_dirname = os.path.join("/home", self.username, ".ssh")
         logger.debug("public key directory %s", pubkey_dirname)
         for tuple in os.walk(pubkey_dirname):
             dirname, dirnames, filenames = tuple
@@ -90,7 +135,7 @@ class Client(Node):
             if '.pub' in filename:
                 pubkey_filepath = os.path.join(dirname, filename)
                 logger.debug("public key file %s", pubkey_filepath)
-                pubkey = open(pubkey_filepath,'r').readline()
+                pubkey = open(pubkey_filepath, 'r').readline()
                 logger.debug("public key %s", pubkey)
 
         return pubkey
@@ -105,10 +150,10 @@ class Client(Node):
                 break
 
             for filename in filenames:
-		file_path = os.path.join(dirname,filename)
+                file_path = os.path.join(dirname, filename)
                 logger.debug("checked file if modified before client was running: %s", file_path)
                 mtime = os.path.getmtime(file_path)
-                #TODO save and restore last_synctime
+                # TODO save and restore last_synctime
                 if mtime > self.mfiles.get_modified_timestamp():
                     logger.debug("modified before client was running %s", file_path)
                     self.mfiles.add(file_path, mtime)
@@ -120,13 +165,13 @@ class Client(Node):
         :param file_name:
         :return:
         """
-	if file_name:
-	        for di in self.watch_dirs:
-	            if di in file_name:
-	                return file_name.replace(di, '')
-	else:
-		return None
-	
+        if file_name:
+            for di in self.watch_dirs:
+                if di in file_name:
+                    return file_name.replace(di, '')
+        else:
+            return None
+
     def sync_files(self):
         """Sync all the files present in the mfiles set and push this set"""
         mfiles = self.mfiles
@@ -135,9 +180,9 @@ class Client(Node):
                 time.sleep(10)
                 for filedata in mfiles.list():
                     filename = filedata.name
-		    if not filename:
-			continue
-                    logger.info("push filedata object to server %s" , filedata)
+                    if not filename:
+                        continue
+                    logger.info("push filedata object to server %s", filedata)
                     server_uname, server_ip, server_port = self.server
                     # Add by daidv, only send file name alter for full path file to server
                     filedata.name = self.format_file_name(filedata.name)
@@ -160,29 +205,19 @@ class Client(Node):
 
     def watch_files(self):
         """keep a watch on files present in sync directories"""
-        wm = WatchManager()
+        ob = Observer()
         # watched events
-        mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY
-        notifier = pyinotify.Notifier(wm, PTmp(self.mfiles, self.rfiles, self.pulled_files))
-
-        logger.debug("watched dir %s",self.watch_dirs)
-        for watch_dir in self.watch_dirs:
-            wm.add_watch(os.path.expanduser(watch_dir), mask, rec=False, auto_add=True)
-        while True:
-            try:
+        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulledfiles), self.watch_dirs)
+        ob.start()
+        logger.debug("watched dir %s", self.watch_dirs)
+        # for watch_dir in self.watch_dirs:
+        #     wm.add_watch(os.path.expanduser(watch_dir), mask, rec=False, auto_add=True)
+        try:
+            while True:
                 time.sleep(5)
-                notifier.process_events()
-                if notifier.check_events():
-                    notifier.read_events()
-            except KeyboardInterrupt:
-                notifier.stop()
-                break
-
-    def start_watch_thread(self):
-        """Start threads to find modified files """
-        watch_thread = threading.Thread(target=self.watch_files)
-        watch_thread.start()
-        logger.info("Thread 'watchfiles' started ")
+        except:
+            self.ob.stop()
+            print "Error"
 
     def mark_presence(self):
         server_uname, server_ip, server_port = self.server
@@ -193,6 +228,6 @@ class Client(Node):
     def activate(self):
         """ Activate Client Node """
         super(Client, self).activate()
-        self.start_watch_thread()
+        self.watch_files()
         self.mark_presence()
         self.find_modified()
