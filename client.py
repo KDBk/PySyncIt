@@ -207,7 +207,7 @@ class Client(Node):
         """keep a watch on files present in sync directories"""
         ob = Observer()
         # watched events
-        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulledfiles), self.watch_dirs)
+        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulled_files), self.watch_dirs)
         ob.start()
         logger.debug("watched dir %s", self.watch_dirs)
         # for watch_dir in self.watch_dirs:
