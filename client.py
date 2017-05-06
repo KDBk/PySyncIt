@@ -23,8 +23,8 @@ class Handler(FileSystemEventHandler):
         self.rfiles = rfiles
         self.pulled_files = pulledfiles
 
-    @staticmethod
-    def on_any_event(event):
+    # @staticmethod
+    def on_any_event(self, event):
         if event.is_directory:
             return None
 
@@ -105,7 +105,7 @@ class Client(Node):
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
         # dest_file = Node.get_dest_path(filename, dest_uname)
-        command = "echo y | pscp -l daidv -pw 1 {} {}@{}:{}".format(
+        command = "pscp -q -l daidv -pw 1 {} {}@{}:{}".format(
             filename, dest_uname, dest_ip, dest_file)
         # proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
         proc = subprocess.Popen(shlex.split(command))
@@ -207,7 +207,7 @@ class Client(Node):
         """keep a watch on files present in sync directories"""
         ob = Observer()
         # watched events
-        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulled_files), self.watch_dirs)
+        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulled_files), self.watch_dirs[0])
         ob.start()
         logger.debug("watched dir %s", self.watch_dirs)
         # for watch_dir in self.watch_dirs:
@@ -219,6 +219,12 @@ class Client(Node):
             self.ob.stop()
             print "Error"
 
+    def start_watch_thread(self):
+        """Start threads to find modified files """
+        watch_thread = threading.Thread(target=self.watch_files)
+        watch_thread.start()
+        logger.info("Thread 'watchfiles' started ")
+
     def mark_presence(self):
         server_uname, server_ip, server_port = self.server
         logger.debug("client call to mark available to the server")
@@ -228,6 +234,6 @@ class Client(Node):
     def activate(self):
         """ Activate Client Node """
         super(Client, self).activate()
-        self.watch_files()
+        self.start_watch_thread()
         self.mark_presence()
         self.find_modified()
