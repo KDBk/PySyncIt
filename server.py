@@ -37,9 +37,9 @@ class Server(Node):
         super(Server, self).__init__(role, ip, port, uname, watch_dirs)
         self.clients = clients
 
-    def req_push_file(self, filedata, source_uname, source_ip, source_port):
+    def req_push_file(self, filename, source_uname, source_ip, source_port):
         """Mark this file as to be notified to clients - this file 'filename' has been modified, pull the latest copy"""
-        logger.debug("server filedata %s %s",filedata['name'], filedata.keys())
+        logger.debug("server filedata %s", filename)
         # my_file = Node.get_dest_path(filedata['name'], self.username)
         # #check if there is a conflict
         # if self.check_collision(filedata):
@@ -48,10 +48,10 @@ class Server(Node):
         #     server_filename = my_file
 
         #Temporary replace by daidv.
-        my_file = "{}{}".format(self.watch_dirs[0], filedata['name'])
+        my_file = "{}{}".format(self.watch_dirs[0], filename)
         server_filename = my_file
 
-        logger.debug("server filename %s returned for file %s", server_filename, filedata['name'])
+        logger.debug("server filename %s returned for file %s", server_filename, filename)
         return server_filename
 
     def ack_push_file(self, server_filename, source_uname, source_ip, source_port):

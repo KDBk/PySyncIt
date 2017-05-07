@@ -148,9 +148,8 @@ class Client(Node):
                     logger.info("push filedata object to server %s", filedata)
                     server_uname, server_ip, server_port = self.server
                     # Add by daidv, only send file name alter for full path file to server
-                    filedata.name = self.format_file_name(filedata.name)
-
-                    dest_file = rpc.req_push_file(server_ip, server_port, filedata, self.username, self.ip, self.port)
+                    filedata_name = self.format_file_name(filedata.name)
+                    dest_file = rpc.req_push_file(server_ip, server_port, filedata_name, self.username, self.ip, self.port)
                     logger.debug("destination file name %s", dest_file)
                     if dest_file is None:
                         break
