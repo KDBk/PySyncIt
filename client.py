@@ -1,9 +1,7 @@
 import logging
 import rpc
-# from pyinotify import WatchManager, ProcessEvent
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-# import pyinotify
 import subprocess
 import time
 import threading
@@ -55,42 +53,6 @@ class Handler(FileSystemEventHandler):
             logger.info("Removed file: %s", filename)
 
 
-# # Find which files to sync
-# class PTmp(ProcessEvent):
-#     """Find which files to sync"""
-#
-#     def __init__(self, mfiles, rfiles, pulledfiles):
-#         self.mfiles = mfiles
-#         self.rfiles = rfiles
-#         self.pulled_files = pulledfiles
-#
-#     def process_IN_CREATE(self, event):
-#         filename = os.path.join(event.path, event.name)
-#         if not self.pulled_files.__contains__(filename):
-#             self.mfiles.add(filename, time.time())
-#             logger.info("Created file: %s", filename)
-#         else:
-#             pass
-#             self.pulled_files.remove(filename)
-#
-#     def process_IN_DELETE(self, event):
-#         filename = os.path.join(event.path, event.name)
-#         self.rfiles.add(filename)
-#         try:
-#             self.mfiles.remove(filename)
-#         except KeyError:
-#             pass
-#         logger.info("Removed file: %s", filename)
-#
-#     def process_IN_MODIFY(self, event):
-#         filename = os.path.join(event.path, event.name)
-#         if not self.pulled_files.__contains__(filename):
-#             self.mfiles.add(filename, time.time())
-#             logger.info("Modified file: %s", filename)
-#         else:
-#             self.pulled_files.remove(filename)
-
-
 class Client(Node):
     """Client class"""
 
@@ -107,7 +69,6 @@ class Client(Node):
         # dest_file = Node.get_dest_path(filename, dest_uname)
         command = "pscp -q -l daidv -pw 1 {} {}@{}:{}".format(
             filename, dest_uname, dest_ip, dest_file)
-        # proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, dest_file)])
         proc = subprocess.Popen(shlex.split(command))
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
@@ -117,7 +78,9 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = Node.get_dest_path(filename, self.username)
         self.pulled_files.add(my_file)
-        proc = subprocess.Popen(['scp', "%s@%s:%s" % (source_uname, source_ip, filename), my_file])
+        command = "pscp -q -l daidv -pw 1 {}@{}:{} {}".format(
+            dest_uname, dest_ip, dest_file, filename)
+        proc = subprocess.Popen(shlex.split(command))
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
 
@@ -180,7 +143,7 @@ class Client(Node):
                 time.sleep(10)
                 for filedata in mfiles.list():
                     filename = filedata.name
-                    if not filename:
+                    if not filename or '.swp' in filename:
                         continue
                     logger.info("push filedata object to server %s", filedata)
                     server_uname, server_ip, server_port = self.server
