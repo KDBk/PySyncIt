@@ -26,6 +26,11 @@ Tương lai, có 2 hướng để cải tiến: cấu hình tài khoản và pas
 		+ ví dụ: dir1: C:\Users\BvSsh_VirtualUsers
 	+ Chú ý 2: Thay thế pscp -> C:\pscp.exe trong hàm push_file ở client.py
 
-## Thử nghiệm:
+## Thử nghiệm
 
 - Tạo file mới ở thự mục của client, chỉnh sửa ... -> thấy kết quả ở thư mục của server
+
+## Ghi chú
+
+- Crtl + Z để tắt chương trình và chạy lệnh sau để kill chương trình (Lý do: hiện tại chưa có cơ chế tắt process khi Crt + C, sẽ implement sau)
+	+ kill -9 $(ps aux | grep monitor.py | awk '{print $2}')
