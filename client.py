@@ -189,6 +189,7 @@ class Client(Node):
     def start_watch_thread(self):
         """Start threads to find modified files """
         watch_thread = threading.Thread(target=self.watch_files)
+        watch_thread.setDaemon(True)
         watch_thread.start()
         logger.info("Thread 'watchfiles' started ")
 
