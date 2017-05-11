@@ -60,6 +60,7 @@ class Node(object):
         server.register_instance(self)
         server.register_introspection_functions()
         rpc_thread = threading.Thread(target=server.serve_forever)
+        rpc_thread.setDaemon(True)
         rpc_thread.start()
         logger.debug("server functions on rpc %s", server.funcs.items())
         logger.info("Started RPC server thread. Listening on port %s..." , self.port)
@@ -67,6 +68,7 @@ class Node(object):
 
     def start_sync_thread(self):
         sync_thread = threading.Thread(target=self.sync_files)
+        sync_thread.setDaemon(True)
         sync_thread.start()
         logger.info("Thread 'syncfiles' started ")
 

@@ -2,8 +2,9 @@ import argparse
 import logging
 import ConfigParser
 import os
-from node import Node
+import sys
 
+from node import Node
 from server import Server, ClientData
 from client import Client
 
@@ -76,6 +77,12 @@ def main():
         node = Client(args.role, args.ip, int(args.port), args.uname, get_watch_dirs(config, args.uname), get_server_tuple(config))
 
     node.activate()
-    
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        while True:
+            continue
+    except KeyboardInterrupt:
+        sys.exit(0)
