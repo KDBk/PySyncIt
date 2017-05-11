@@ -9,10 +9,15 @@ import os
 from node import Node
 from persistence import FileData, FilesPersistentSet
 import shlex
+import platform
 
 __author__ = 'daidv'
 
 logger = logging.getLogger('syncIt')
+
+
+PSCP_COMMAND = {'Linux': 'pscp', 'Windows': 'C:\pscp.exe'}
+ENV = platform.system()
 
 
 class Handler(FileSystemEventHandler):
@@ -67,8 +72,8 @@ class Client(Node):
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
         # dest_file = Node.get_dest_path(filename, dest_uname)
-        command = "pscp -q -l daidv -pw 1 {} {}@{}:{}".format(
-            filename, dest_uname, dest_ip, dest_file)
+        command = "{} -q -l daidv -pw 1 {} {}@{}:{}".format(
+            PSCP_COMMAND[ENV], filename, dest_uname, dest_ip, dest_file)
         proc = subprocess.Popen(shlex.split(command))
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
@@ -78,8 +83,8 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = Node.get_dest_path(filename, self.username)
         self.pulled_files.add(my_file)
-        command = "pscp -q -l daidv -pw 1 {}@{}:{} {}".format(
-            dest_uname, dest_ip, dest_file, filename)
+        command = "{} -q -l daidv -pw 1 {}@{}:{} {}".format(
+            PSCP_COMMAND[ENV], dest_uname, dest_ip, dest_file, filename)
         proc = subprocess.Popen(shlex.split(command))
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
