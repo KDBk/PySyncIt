@@ -8,7 +8,6 @@ import threading
 import os
 from node import Node
 from persistence import FileData, FilesPersistentSet
-import shlex
 import platform
 
 __author__ = 'daidv'
@@ -72,9 +71,9 @@ class Client(Node):
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
         # dest_file = Node.get_dest_path(filename, dest_uname)
-        command = "{} -q -l daidv -pw 1 {} {}@{}:{}".format(
+        command = "echo y | {} -q -l daidv -pw 1 {} {}@{}:{}".format(
             PSCP_COMMAND[ENV], filename, dest_uname, dest_ip, dest_file)
-        proc = subprocess.Popen(shlex.split(command))
+        proc = subprocess.Popen(command.split(), shell=True)
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
         return push_status
@@ -83,9 +82,9 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = Node.get_dest_path(filename, self.username)
         self.pulled_files.add(my_file)
-        command = "{} -q -l daidv -pw 1 {}@{}:{} {}".format(
+        command = "echo y | {} -q -l daidv -pw 1 {}@{}:{} {}".format(
             PSCP_COMMAND[ENV], dest_uname, dest_ip, dest_file, filename)
-        proc = subprocess.Popen(shlex.split(command))
+        proc = subprocess.Popen(command.split(), shell=True)
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
 

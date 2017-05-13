@@ -21,9 +21,9 @@ def setup_logging(log_filename):
 def get_watch_dirs(config, user_name):
     watch_dirs = []
     for key, value in config.items('syncit.dirs'):
-        dir = os.path.expanduser(value.strip())
-        my_dir = Node.get_dest_path(dir, user_name)
-        watch_dirs.append(my_dir)
+        # dir = os.path.expanduser(value.strip())
+        # my_dir = Node.get_dest_path(dir, user_name)
+        watch_dirs.append(value.strip())
     logger.debug("watched dirs %s", watch_dirs)
     return watch_dirs
 
