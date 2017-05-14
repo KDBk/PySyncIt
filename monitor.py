@@ -4,7 +4,7 @@ import os
 import sys
 
 from node import Node
-from server import Server, ClientData
+from server import Server
 from client import Client
 import config as sync_config
 
@@ -14,6 +14,9 @@ __updater__ = 'daidv'
 
 
 logger = logging.getLogger('syncIt')
+USERNAME = sync_config.get('syncit.auth', 'username')
+PASSWD = sync_config.get('syncit.auth', 'passwd')
+
 
 
 def setup_logging(log_filename):
@@ -31,16 +34,16 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     
     parser.add_argument(
-        '-ip', help='Specify the ip address of this machine', required=True)
+        '-ip', help='Specify the ip address of this machine', required=False)
 
     parser.add_argument(
-        '-port', help='Specify the port of this machine to run rpc server', required=True)
+        '-port', help='Specify the port of this machine to run rpc server', required=False)
 
     parser.add_argument(
-        '-uname', help='Specify the user name of this machine', required=True)
+        '-uname', help='Specify the user name of this machine', required=False)
     
     parser.add_argument(
-        '-role', help='Specify the role of this machine - client or server', required=True)
+        '-role', help='Specify the role of this machine - client or server', required=False)
     
     args = parser.parse_args()
 
@@ -48,9 +51,9 @@ def main():
     setup_logging("syncit.log.%s-%s" % (args.ip, args.port));
 
     if (args.role == 'server'):
-        node = Server(args.role, args.ip, int(args.port), args.uname, sync_config.get_watch_dirs(), sync_config.get_clients())
+        node = Server(args.role, *sync_config.get_server_tuple(), USERNAME, PASSWD, sync_config.get_watch_dirs(), sync_config.get_clients())
     else:
-        node = Client(args.role, args.ip, int(args.port), args.uname, sync_config.get_watch_dirs(), sync_config.get_server_tuple())
+        node = Client(args.role, *sync_config.get_clients(), USERNAME, PASSWD, sync_config.get_watch_dirs(), sync_config.get_server_tuple())
 
     node.activate()
 

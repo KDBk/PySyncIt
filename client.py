@@ -22,8 +22,6 @@ logger = logging.getLogger('syncIt')
 
 PSCP_COMMAND = {'Linux': 'pscp', 'Windows': 'C:\pscp.exe'}
 ENV = platform.system()
-USERNAME = sync_config.get('syncit.auth', 'username')
-PASSWD = sync_config.get('syncit.auth', 'passwd')
 
 
 class Handler(FileSystemEventHandler):
@@ -67,8 +65,8 @@ class Handler(FileSystemEventHandler):
 class Client(Node):
     """Client class"""
 
-    def __init__(self, role, ip, port, uname, watch_dirs, server):
-        super(Client, self).__init__(role, ip, port, uname, watch_dirs)
+    def __init__(self, role, ip, port, uname, passwd, watch_dirs, server):
+        super(Client, self).__init__(role, ip, port, uname, passwd, watch_dirs)
         self.server = server
         self.mfiles = FilesPersistentSet(pkl_filename='client.pkl')  # set() #set of modified files
         self.rfiles = set()  # set of removed files
@@ -77,22 +75,21 @@ class Client(Node):
 
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
-        # dest_file = Node.get_dest_path(filename, dest_uname)
-        command = "echo y | {} -q -l daidv -pw 1 {} {}@{}:{}".format(
-            PSCP_COMMAND[ENV], USERNAME, PASSWD,
+        command = "echo y | {} -q -l {} -pw {} {} {}@{}:{}".format(
+            PSCP_COMMAND[ENV], self.username, self.passwd,
             filename, dest_uname, dest_ip, dest_file)
         proc = subprocess.Popen(command.split(), shell=True)
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
         return push_status
 
-    def pull_file(self, filename, source_uname, source_ip):
+    def pull_file(self, filename, source_file, source_uname, source_ip):
         """pull file 'filename' from the source"""
-        my_file = Node.get_dest_path(filename, self.username)
+        my_file = "{}{}".format(self.watch_dirs[0], filename)
         self.pulled_files.add(my_file)
         command = "echo y | {} -q -l {} -pw {} {}@{}:{} {}".format(
-            PSCP_COMMAND[ENV], USERNAME, PASSWD,
-            dest_uname, dest_ip, dest_file, filename)
+            PSCP_COMMAND[ENV], self.username, self.passwd, source_uname,
+                source_ip, source_file, my_file)
         proc = subprocess.Popen(command.split(), shell=True)
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
@@ -115,20 +112,6 @@ class Client(Node):
                     logger.debug("modified before client was running %s", file_path)
                     self.mfiles.add(file_path, mtime)
 
-    def format_file_name(self, file_name):
-        """
-        Remove dir in full path of file
-        author: daidv
-        :param file_name:
-        :return:
-        """
-        if file_name:
-            for di in self.watch_dirs:
-                if di in file_name:
-                    return file_name.replace(di, '')
-        else:
-            return None
-
     def sync_files(self):
         """Sync all the files present in the mfiles set and push this set"""
         mfiles = self.mfiles
@@ -140,10 +123,10 @@ class Client(Node):
                     if not filename or '.swp' in filename:
                         continue
                     logger.info("push filedata object to server %s", filedata)
-                    server_uname, server_ip, server_port = self.server
+                    server_ip, server_port = self.server
                     # Add by daidv, only send file name alter for full path file to server
                     filedata_name = self.format_file_name(filedata.name)
-                    dest_file = rpc.req_push_file(server_ip, server_port, filedata_name, self.username, self.ip, self.port)
+                    server_uname, dest_file = rpc.req_push_file(server_ip, server_port, filedata_name)
                     logger.debug("destination file name %s", dest_file)
                     if dest_file is None:
                         break

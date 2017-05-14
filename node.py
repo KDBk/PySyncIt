@@ -30,10 +30,24 @@ class Node(object):
     def __init__(self, role , ip, port, username, pasword, watch_dirs):
         self.role = role
         self.ip = ip
-        self.port = port
+        self.port = int(port)
         self.username = uname
         self.passwd = password
         self.watch_dirs = watch_dirs
+
+    def format_file_name(self, file_name):
+        """
+        Remove dir in full path of file
+        author: daidv
+        :param file_name:
+        :return:
+        """
+        if file_name:
+            for di in self.watch_dirs:
+                if di in file_name:
+                    return file_name.replace(di, '')
+        else:
+            return None
 
     @staticmethod
     def get_dest_path(filename, dest_uname):

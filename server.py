@@ -9,11 +9,14 @@ import subprocess
 import os
 
 import rpc
+import config as sync_config
 
 __author__ = 'dushyant'
 __updater__ = 'daidv'
 
 logger = logging.getLogger('syncIt')
+USERNAME = sync_config.get('syncit.auth', 'username')
+PASSWD = sync_config.get('syncit.auth', 'passwd')
 
 
 def is_collision_file(filename):
@@ -35,7 +38,7 @@ class ClientData(object):
 
 class Server(Node):
     """Server class"""
-    def __init__(self, role, ip, port, uname, watch_dirs, clients):
+    def __init__(self, role, ip, port, uname, passwd, watch_dirs, clients):
         super(Server, self).__init__(role, ip, port, uname, passwd, watch_dirs)
         self.clients = clients
 
@@ -46,7 +49,7 @@ class Server(Node):
         server_filename = my_file
 
         logger.debug("server filename %s returned for file %s", server_filename, filename)
-        return server_filename
+        return (USERNAME, server_filename)
 
     def ack_push_file(self, server_filename, source_uname, source_ip, source_port):
         """Mark this file as to be notified to clients - this file 'filename' has been modified, pull the latest copy"""
@@ -62,6 +65,8 @@ class Server(Node):
                 logger.debug("add file to modified list")
 
     def check_collision(self, filedata):
+        # As a temporary, we are not using it.
+        # This is so dangerous if two client push same file in the same time
         my_file = Node.get_dest_path(filedata['name'], self.username)
         try:
            collision_exist = os.path.getmtime(my_file) > filedata['time']
@@ -83,7 +88,8 @@ class Server(Node):
                     logger.debug( "list of files for client %s, availability %s",client.mfiles.list(), client.available)
                     if client.available:
                         for file in client.mfiles.list():
-                            rpc_status = rpc.pull_file(client.ip, client.port, file, self.username, self.ip)
+                            onlye_file_name = self.format_file_name(file)
+                            rpc_status = rpc.pull_file(client.ip, client.port, onlye_file_name, file, self.username, self.ip)
 
                             if rpc_status is None:
                                 client.available = False

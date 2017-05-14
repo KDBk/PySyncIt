@@ -31,9 +31,9 @@ def safe_rpc(fn):
 
 
 @safe_rpc
-def pull_file(dest_ip, dest_port, filename, source_uname, source_ip):
+def pull_file(dest_ip, dest_port, filename, source_file, source_uname, source_ip):
     rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
-    rpc_connect.pull_file(filename, source_uname, source_ip)
+    rpc_connect.pull_file(filename, source_file, source_uname, source_ip)
 
 
 @safe_rpc

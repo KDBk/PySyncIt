@@ -24,19 +24,20 @@ def get_clients():
     clients = []
     for key, value in sync_config.items('syncit.clients'):
         words = value.split(',')
-        client_uname, client_pwd, client_ip, client_port = [word.strip() for word in words]
-        clients.append(ClientData(client_uname, client_ip, int(client_port)))
+        client_ip, client_port = [word.strip() for word in words]
+        clients.append(ClientData(key, client_ip, int(client_port)))
     return clients
 
 
 def get_server_tuple():
-    server_uname, server_pwd, server_ip, server_port = sync_config.get('syncit.server', 'server', 1).split(',')
-    return (server_uname, server_pwd, server_ip, server_port)
+    server_ip, server_port = sync_config.get('syncit.server', 'server', 1).split(',')
+    return (server_ip, server_port)
 
 
 def get_auth():
     username = sync_config.get('syncit.auth', 'username')
     passwd = sync_config.get('syncit.auth', 'passwd')
+    return (username, passwd)
 
 
 __all__ = [get_watch_dirs, get_clients, get_server_tuple, get_auth]
