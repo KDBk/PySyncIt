@@ -164,7 +164,7 @@ class Client(Node):
         logger.info("Thread 'watchfiles' started ")
 
     def mark_presence(self):
-        server_uname, server_ip, server_port = self.server
+        server_ip, server_port = self.server
         logger.debug("client call to mark available to the server")
         rpc.mark_presence(server_ip, server_port, self.ip, self.port)
         logger.debug("find modified files")
