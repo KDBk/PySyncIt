@@ -75,9 +75,11 @@ class Client(Node):
 
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
-        command = "echo y | {} -q -l {} -pw {} {} {}@{}:{}".format(
+        first_path = ['echo', 'y', '|']
+        second_path = "{} -q -l {} -pw {} {} {}@{}:{}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd,
             filename, dest_uname, dest_ip, dest_file)
+        command = first_path.extend(second_path.split())
         proc = subprocess.Popen(command.split(), shell=True)
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
@@ -87,9 +89,11 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = "{}{}".format(self.watch_dirs[0], filename)
         self.pulled_files.add(my_file)
-        command = "echo y | {} -q -l {} -pw {} {}@{}:{} {}".format(
+        first_path = ['echo', 'y', '|']
+        second_path = "{} -q -l {} -pw {} {}@{}:{} {}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd, source_uname,
                 source_ip, source_file, my_file)
+        command = first_path.extend(second_path.split())
         proc = subprocess.Popen(command.split(), shell=True)
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
@@ -164,7 +168,7 @@ class Client(Node):
         logger.info("Thread 'watchfiles' started ")
 
     def mark_presence(self):
-        server_uname, server_ip, server_port = self.server
+        server_ip, server_port = self.server
         logger.debug("client call to mark available to the server")
         rpc.mark_presence(server_ip, server_port, self.ip, self.port)
         logger.debug("find modified files")
