@@ -1,7 +1,8 @@
 import ConfigParser
 import logging
 
-from server import ClientData
+from persistence import PersistentSet
+
 
 __author__ = 'dushyant'
 __updater__ = 'daidv'
@@ -10,6 +11,15 @@ __updater__ = 'daidv'
 logger = logging.getLogger('syncIt')
 sync_config = ConfigParser.ConfigParser()
 sync_config.read('syncit.cfg')
+
+
+class ClientData(object):
+    """Data corresponding to each client residing in server object"""
+    def __init__(self, client_key, client_ip, client_port):
+        self.available = False
+        self.mfiles = PersistentSet('server-%s.pkl'%(client_key))
+        self.ip = client_ip
+        self.port = client_port
 
 
 def get_watch_dirs():

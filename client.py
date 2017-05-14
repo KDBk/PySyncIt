@@ -11,7 +11,7 @@ from watchdog.events import FileSystemEventHandler
 import rpc
 from node import Node
 from persistence import FileData, FilesPersistentSet
-import config as sync_config
+import config
 
 
 __author__ = 'dushyant'

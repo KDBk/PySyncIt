@@ -4,19 +4,18 @@ import threading
 import time
 import errno
 from node import Node
-from persistence import PersistentSet
 import subprocess
 import os
 
 import rpc
-import config as sync_config
+import config
 
 __author__ = 'dushyant'
 __updater__ = 'daidv'
 
 logger = logging.getLogger('syncIt')
-USERNAME = sync_config.get('syncit.auth', 'username')
-PASSWD = sync_config.get('syncit.auth', 'passwd')
+USERNAME = config.sync_config.get('syncit.auth', 'username')
+PASSWD = config.sync_config.get('syncit.auth', 'passwd')
 
 
 def is_collision_file(filename):
@@ -26,15 +25,6 @@ def is_collision_file(filename):
     else:
         return True
 
-
-class ClientData(object):
-    """Data corresponding to each client residing in server object"""
-    def __init__(self, client_uname, client_ip, client_port):
-        self.available = False
-        self.mfiles = PersistentSet('server-%s.pkl'%(client_uname))
-        self.uname = client_uname
-        self.ip = client_ip
-        self.port = client_port
 
 class Server(Node):
     """Server class"""
