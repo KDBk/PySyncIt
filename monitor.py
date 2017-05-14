@@ -1,14 +1,20 @@
 import argparse
 import logging
-import ConfigParser
 import os
 import sys
 
 from node import Node
 from server import Server, ClientData
 from client import Client
+import config as sync_config
+
+
+__author__ = 'dushyant'
+__updater__ = 'daidv'
+
 
 logger = logging.getLogger('syncIt')
+
 
 def setup_logging(log_filename):
     handler = logging.FileHandler(log_filename)
@@ -16,30 +22,6 @@ def setup_logging(log_filename):
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
     print 'Logging started on file %s' % log_filename
-
-
-def get_watch_dirs(config, user_name):
-    watch_dirs = []
-    for key, value in config.items('syncit.dirs'):
-        # dir = os.path.expanduser(value.strip())
-        # my_dir = Node.get_dest_path(dir, user_name)
-        watch_dirs.append(value.strip())
-    logger.debug("watched dirs %s", watch_dirs)
-    return watch_dirs
-
-
-def get_clients(config):
-    clients = []
-    for key, value in config.items('syncit.clients'):
-        words = value.split(',')
-        client_uname, client_ip, client_port = [word.strip() for word in words]
-        clients.append(ClientData(client_uname, client_ip, int(client_port)))
-    return clients
-
-
-def get_server_tuple(config):
-    server_uname, server_ip, server_port = config.get('syncit.server', 'server', 1).split(',')
-    return (server_uname, server_ip, server_port)
 
 
 def main():
@@ -64,17 +46,11 @@ def main():
 
     #start logging
     setup_logging("syncit.log.%s-%s" % (args.ip, args.port));
-    logger = logging.getLogger('syncIt')
-
-    #Read config file
-    config = ConfigParser.ConfigParser()
-    logger.info("Using config file: syncit.cfg")
-    config.read('syncit.cfg')
 
     if (args.role == 'server'):
-        node = Server(args.role, args.ip, int(args.port), args.uname, get_watch_dirs(config, args.uname), get_clients(config))
+        node = Server(args.role, args.ip, int(args.port), args.uname, sync_config.get_watch_dirs(), sync_config.get_clients())
     else:
-        node = Client(args.role, args.ip, int(args.port), args.uname, get_watch_dirs(config, args.uname), get_server_tuple(config))
+        node = Client(args.role, args.ip, int(args.port), args.uname, sync_config.get_watch_dirs(), sync_config.get_server_tuple())
 
     node.activate()
 

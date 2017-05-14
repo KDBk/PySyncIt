@@ -5,9 +5,13 @@ import re
 import subprocess
 import threading
 
+
 __author__ = 'dushyant'
+__updater__ = 'daidv'
+
 
 logger = logging.getLogger('syncIt')
+
 
 class Handler(SimpleXMLRPCRequestHandler):
     def _dispatch(self, method, params):
@@ -23,11 +27,12 @@ class Handler(SimpleXMLRPCRequestHandler):
 class Node(object):
     """Base class for client and server"""
 
-    def __init__(self, role , ip, port, uname, watch_dirs):
+    def __init__(self, role , ip, port, username, pasword, watch_dirs):
         self.role = role
         self.ip = ip
         self.port = port
         self.username = uname
+        self.passwd = password
         self.watch_dirs = watch_dirs
 
     @staticmethod
@@ -39,7 +44,6 @@ class Node(object):
             destpath = user_dir_pattern.sub("/home/%s/" % dest_uname, filename)
         logger.debug("destpath %s", destpath)
         return destpath
-
 
     @staticmethod
     def push_file(filename, dest_uname, dest_ip):

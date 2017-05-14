@@ -1,22 +1,29 @@
 import logging
-import rpc
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import subprocess
 import time
 import threading
 import os
-from node import Node
-from persistence import FileData, FilesPersistentSet
 import platform
 
-__author__ = 'daidv'
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+import rpc
+from node import Node
+from persistence import FileData, FilesPersistentSet
+import config as sync_config
+
+
+__author__ = 'dushyant'
+__updater__ = 'daidv'
 
 logger = logging.getLogger('syncIt')
 
 
 PSCP_COMMAND = {'Linux': 'pscp', 'Windows': 'C:\pscp.exe'}
 ENV = platform.system()
+USERNAME = sync_config.get('syncit.auth', 'username')
+PASSWD = sync_config.get('syncit.auth', 'passwd')
 
 
 class Handler(FileSystemEventHandler):
@@ -72,7 +79,8 @@ class Client(Node):
         """push file 'filename' to the destination"""
         # dest_file = Node.get_dest_path(filename, dest_uname)
         command = "echo y | {} -q -l daidv -pw 1 {} {}@{}:{}".format(
-            PSCP_COMMAND[ENV], filename, dest_uname, dest_ip, dest_file)
+            PSCP_COMMAND[ENV], USERNAME, PASSWD,
+            filename, dest_uname, dest_ip, dest_file)
         proc = subprocess.Popen(command.split(), shell=True)
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
@@ -82,30 +90,12 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = Node.get_dest_path(filename, self.username)
         self.pulled_files.add(my_file)
-        command = "echo y | {} -q -l daidv -pw 1 {}@{}:{} {}".format(
-            PSCP_COMMAND[ENV], dest_uname, dest_ip, dest_file, filename)
+        command = "echo y | {} -q -l {} -pw {} {}@{}:{} {}".format(
+            PSCP_COMMAND[ENV], USERNAME, PASSWD,
+            dest_uname, dest_ip, dest_file, filename)
         proc = subprocess.Popen(command.split(), shell=True)
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
-
-    def get_public_key(self):
-        """Return public key of this client"""
-        pubkey = None
-        pubkey_dirname = os.path.join("/home", self.username, ".ssh")
-        logger.debug("public key directory %s", pubkey_dirname)
-        for tuple in os.walk(pubkey_dirname):
-            dirname, dirnames, filenames = tuple
-            break
-        logger.debug("public key dir files %s", filenames)
-        for filename in filenames:
-
-            if '.pub' in filename:
-                pubkey_filepath = os.path.join(dirname, filename)
-                logger.debug("public key file %s", pubkey_filepath)
-                pubkey = open(pubkey_filepath, 'r').readline()
-                logger.debug("public key %s", pubkey)
-
-        return pubkey
 
     def find_modified(self):
         """Find all those files which have been modified when sync demon was not running"""
@@ -176,8 +166,6 @@ class Client(Node):
         ob.schedule(Handler(self.mfiles, self.rfiles, self.pulled_files), self.watch_dirs[0])
         ob.start()
         logger.debug("watched dir %s", self.watch_dirs)
-        # for watch_dir in self.watch_dirs:
-        #     wm.add_watch(os.path.expanduser(watch_dir), mask, rec=False, auto_add=True)
         try:
             while True:
                 time.sleep(5)
