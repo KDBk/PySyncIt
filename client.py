@@ -4,6 +4,7 @@ import time
 import threading
 import os
 import platform
+import shlex
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -17,11 +18,13 @@ import config
 __author__ = 'dushyant'
 __updater__ = 'daidv'
 
+
 logger = logging.getLogger('syncIt')
 
 
 PSCP_COMMAND = {'Linux': 'pscp', 'Windows': 'C:\pscp.exe'}
 ENV = platform.system()
+PIPE = subprocess.PIPE
 
 
 class Handler(FileSystemEventHandler):
@@ -75,12 +78,11 @@ class Client(Node):
 
     def push_file(self, filename, dest_file, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
-        first_path = ['echo', 'y', '|']
-        second_path = "{} -q -l {} -pw {} {} {}@{}:{}".format(
+        command = "{} -q -l {} -pw {} {} {}@{}:{}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd,
-            filename, dest_uname, dest_ip, dest_file)
-        command = first_path.extend(second_path.split())
-        proc = subprocess.Popen(command.split(), shell=True)
+            filename, dest_uname, dest_ip, dest_file).split()
+        proc = subprocess.Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+	proc.stdin.write('y')
         push_status = proc.wait()
         logger.debug("returned status %s", push_status)
         return push_status
@@ -89,12 +91,11 @@ class Client(Node):
         """pull file 'filename' from the source"""
         my_file = "{}{}".format(self.watch_dirs[0], filename)
         self.pulled_files.add(my_file)
-        first_path = ['echo', 'y', '|']
-        second_path = "{} -q -l {} -pw {} {}@{}:{} {}".format(
+        command = "{} -q -l {} -pw {} {}@{}:{} {}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd, source_uname,
-                source_ip, source_file, my_file)
-        command = first_path.extend(second_path.split())
-        proc = subprocess.Popen(command.split(), shell=True)
+                source_ip, source_file, my_file).split()
+	proc = subprocess.Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        proc.stdin.write('y')
         return_status = proc.wait()
         logger.debug("returned status %s", return_status)
 
