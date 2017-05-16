@@ -27,8 +27,7 @@ class Handler(SimpleXMLRPCRequestHandler):
 class Node(object):
     """Base class for client and server"""
 
-    def __init__(self, role , ip, port, username, password, watch_dirs):
-        self.role = role
+    def __init__(self, ip, port, username, password, watch_dirs):
         self.ip = ip
         self.port = int(port)
         self.username = username
@@ -49,22 +48,9 @@ class Node(object):
         else:
             return None
 
-    @staticmethod
-    def get_dest_path(filename, dest_uname):
+    def get_dest_path(self, filename):
         """ Replace username in filename with 'dest_uname'"""
-        user_dir_pattern = re.compile("/home/[^ ]*?/")
-
-        if re.search(user_dir_pattern, filename):
-            destpath = user_dir_pattern.sub("/home/%s/" % dest_uname, filename)
-        logger.debug("destpath %s", destpath)
-        return destpath
-
-    @staticmethod
-    def push_file(filename, dest_uname, dest_ip):
-        """push file 'filename' to the destination """
-        proc = subprocess.Popen(['scp', filename, "%s@%s:%s" % (dest_uname, dest_ip, Node.get_dest_path(filename, dest_uname))])
-        return_status = proc.wait()
-        logger.debug("returned status %s",return_status)
+        return "{}{}" .format(self.watch_dirs[0], filename)
 
     def ensure_dir(self):
         """create directories to be synced if not exist"""
@@ -83,11 +69,16 @@ class Node(object):
         logger.debug("server functions on rpc %s", server.funcs.items())
         logger.info("Started RPC server thread. Listening on port %s..." , self.port)
 
-
     def start_sync_thread(self):
-        sync_thread = threading.Thread(target=self.sync_files)
-        sync_thread.setDaemon(True)
-        sync_thread.start()
+        # Ask clients to sync new files, OK
+        sync_to_clients_thread = threading.Thread(target=self.sync_files_to_clients)
+        sync_to_clients_thread.setDaemon(True)
+        sync_to_clients_thread.start()
+
+        # Sync file to itself server
+        sync_to_server_thread = threading.Thread(target=self.sync_files_to_server)
+        sync_to_server_thread.setDaemon(True)
+        sync_to_server_thread.start()
         logger.info("Thread 'syncfiles' started ")
 
     def activate(self):

@@ -38,6 +38,9 @@ def get_clients():
         clients.append(ClientData(key, client_ip, int(client_port)))
     return clients
 
+def get_node():
+    node_ip, node_port = sync_config.get('syncit.server', 'server', 1).split(',')
+    return (node_ip, node_port)
 
 def get_server_tuple():
     server_ip, server_port = sync_config.get('syncit.server', 'server', 1).split(',')
