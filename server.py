@@ -199,11 +199,13 @@ class Server(Node):
             except KeyboardInterrupt:
                 break
 
-    def mark_presence(self, client_ip, client_port):
+    def mark_presence_from_client(self):
         """Mark client as available"""
         server_ip, server_port = self.server
         rpc.mark_presence(server_ip, server_port, self.ip, self.port)
 
+    def mark_presence_as_server(self, client_ip, client_port):
+        """Mark client as available"""
         for client in self.clients:
             if (client_ip, client_port) == (client.ip, client.port):
                 client.available = True
@@ -231,6 +233,20 @@ class Server(Node):
             client.available = rpc.find_available(client.ip, client.port)
             logger.debug("client marked available")
 
+    def watch_files(self):
+        """keep a watch on files present in sync directories"""
+        ob = Observer()
+        # watched events
+        ob.schedule(Handler(self.mfiles, self.rfiles, self.pulled_files), self.watch_dirs[0])
+        ob.start()
+        logger.debug("watched dir %s", self.watch_dirs)
+        try:
+            while True:
+                time.sleep(5)
+        except:
+            self.ob.stop()
+            print "Error"
+
     def start_watch_thread(self):
         """Start threads to find modified files """
         watch_thread = threading.Thread(target=self.watch_files)
@@ -243,5 +259,5 @@ class Server(Node):
         super(Server, self).activate()
         self.find_available_clients()
         self.start_watch_thread()
-        self.mark_presence()
+        self.mark_presence_from_client()
         self.find_modified()

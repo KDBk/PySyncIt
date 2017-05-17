@@ -54,7 +54,7 @@ def mark_presence(dest_ip, dest_port, source_ip, source_port):
     rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
     logger.debug("rpc call to mark available")
     logger.debug("available methods on rpc server %s", rpc_connect.system.listMethods())
-    rpc_connect.mark_presence(source_ip, source_port)
+    rpc_connect.mark_presence_as_server(source_ip, source_port)
 
 
 def find_available(dest_ip, dest_port):

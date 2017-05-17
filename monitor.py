@@ -26,9 +26,10 @@ if __name__ == "__main__":
         server = config.get_server_tuple()
         clients = config.get_clients()
         watch_dirs = config.get_watch_dirs()
-        node = config.get_node()
-        node = Server(node[0], node[1], USERNAME, PASSWD, watch_dirs, clients, server)
+        this = config.get_node()
+        node = Server(this[0], this[1], USERNAME, PASSWD, watch_dirs, clients, server)
         setup_logging("syncit.log.%s-%s" % (server[0], server[1]))
+        node.activate()
         while True:
             continue
     except KeyboardInterrupt:
