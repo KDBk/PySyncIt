@@ -105,7 +105,7 @@ class Server(Node):
         """pull file 'filename' from the source"""
         my_file = "{}{}".format(self.watch_dirs[0], filename)
         self.pulled_files.add(my_file)
-        command = "{} -q -l {} -pw {} {}@{}:{} {}".format(
+        command = "{} -qp -l {} -pw {} {}@{}:{} {}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd, source_uname,
             source_ip, source_file, my_file).split()
         print(command)
