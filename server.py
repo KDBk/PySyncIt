@@ -188,8 +188,8 @@ class Server(Node):
                     server_uname, dest_file, mtime_server = rpc.req_push_file(server_ip, server_port, filedata_name)
                     logger.debug("destination file name %s", dest_file)
                     mtime_client = os.stat(filename).st_mtime
-
-                    if float(mtime_server) > float(mtime_client):
+                    print(mtime_server, mtime_client)
+                    if float(mtime_server) >= float(mtime_client):
                         mfiles.remove(filename)
                         continue
                     if dest_file is None:
