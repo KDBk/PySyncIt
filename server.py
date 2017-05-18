@@ -121,7 +121,7 @@ class Server(Node):
         server_filename = my_file
 
         logger.debug("server filename %s returned for file %s", server_filename, filename)
-        return (self.username, server_filename)
+        return (self.username, server_filename, os.stat(server_filename).st_mtime)
 
     def ack_push_file(self, server_filename, source_uname, source_ip, source_port):
         """Mark this file as to be notified to clients - this file 'filename' has been modified, pull the latest copy"""
@@ -185,8 +185,13 @@ class Server(Node):
                     server_ip, server_port = self.server
                     # Add by daidv, only send file name alter for full path file to server
                     filedata_name = self.format_file_name(filedata.name)
-                    server_uname, dest_file = rpc.req_push_file(server_ip, server_port, filedata_name)
+                    server_uname, dest_file, mtime_server = rpc.req_push_file(server_ip, server_port, filedata_name)
                     logger.debug("destination file name %s", dest_file)
+                    mtime_client = os.stat(filename).st_mtime
+
+                    if float(mtime_server) > float(mtime_client):
+                        mfiles.remove(filename)
+                        continue
                     if dest_file is None:
                         break
                     push_status = self.push_file(filename, dest_file, server_uname, server_ip)
