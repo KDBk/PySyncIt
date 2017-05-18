@@ -133,7 +133,7 @@ class Server(Node):
             if (client.ip, client.port) == (source_ip, source_port):
                 continue
             else:
-                client.mfiles.add(server_filename)
+                # client.mfiles.add(server_filename)
                 logger.debug("add file to modified list")
 
     def check_collision(self, filedata):
