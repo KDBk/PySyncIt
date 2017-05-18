@@ -94,6 +94,7 @@ class Server(Node):
         command = "{} -q -l {} -pw {} {} {}@{}:{}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd,
             filename, dest_uname, dest_ip, dest_file).split()
+        print(command)
         proc = subprocess.Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         proc.stdin.write('y')
         push_status = proc.wait()
@@ -107,6 +108,7 @@ class Server(Node):
         command = "{} -q -l {} -pw {} {}@{}:{} {}".format(
             PSCP_COMMAND[ENV], self.username, self.passwd, source_uname,
             source_ip, source_file, my_file).split()
+        print(command)
         proc = subprocess.Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         proc.stdin.write('y')
         return_status = proc.wait()
