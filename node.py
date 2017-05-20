@@ -27,11 +27,9 @@ class Handler(SimpleXMLRPCRequestHandler):
 class Node(object):
     """Base class for client and server"""
 
-    def __init__(self, ip, port, username, password, watch_dirs):
+    def __init__(self, ip, port, watch_dirs):
         self.ip = ip
         self.port = int(port)
-        self.username = username
-        self.passwd = password
         self.watch_dirs = watch_dirs
 
     def format_file_name(self, file_name):
@@ -70,11 +68,6 @@ class Node(object):
         logger.info("Started RPC server thread. Listening on port %s..." , self.port)
 
     def start_sync_thread(self):
-        # Ask clients to sync new files, OK
-        sync_to_clients_thread = threading.Thread(target=self.sync_files_to_clients)
-        sync_to_clients_thread.setDaemon(True)
-        sync_to_clients_thread.start()
-
         # Sync file to itself server
         sync_to_server_thread = threading.Thread(target=self.sync_files_to_server)
         sync_to_server_thread.setDaemon(True)

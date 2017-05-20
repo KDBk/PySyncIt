@@ -8,9 +8,6 @@ __updater__ = 'daidv'
 
 
 logger = logging.getLogger('syncIt')
-USERNAME = config.sync_config.get('syncit.auth', 'username')
-PASSWD = config.sync_config.get('syncit.auth', 'passwd')
-
 
 
 def setup_logging(log_filename):
@@ -23,12 +20,11 @@ def setup_logging(log_filename):
 if __name__ == "__main__":
     try:
         # start logging
-        server = config.get_server_tuple()
-        clients = config.get_clients()
+        servers = config.get_servers()
         watch_dirs = config.get_watch_dirs()
         this = config.get_node()
-        node = Server(this[0], this[1], USERNAME, PASSWD, watch_dirs, clients, server)
-        setup_logging("syncit.log.%s-%s" % (server[0], server[1]))
+        node = Server(this[0], this[1], watch_dirs, servers)
+        setup_logging("syncit.log.%s-%s" % (this[0], this[1]))
         node.activate()
         while True:
             continue

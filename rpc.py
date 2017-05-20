@@ -29,33 +29,10 @@ def safe_rpc(fn):
                 raise
     return safe_fn
 
-
-@safe_rpc
-def pull_file(dest_ip, dest_port, filename, source_file, source_uname, source_ip):
-    rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
-    rpc_connect.pull_file(filename, source_file, source_uname, source_ip)
-
-
 @safe_rpc
 def req_push_file(dest_ip, dest_port, filename):
     rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
     return rpc_connect.req_push_file(filename)
-
-
-@safe_rpc
-def ack_push_file(dest_ip, dest_port, server_filename, source_uname, source_ip, source_port):
-    rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
-    return rpc_connect.ack_push_file(server_filename, source_uname, source_ip, source_port)
-
-
-@safe_rpc
-def mark_presence(dest_ip, dest_port, source_ip, source_port):
-    """rpc call to marks client as available"""
-    rpc_connect = xmlrpclib.ServerProxy("http://%s:%s/"% (dest_ip, dest_port), allow_none = True)
-    logger.debug("rpc call to mark available")
-    logger.debug("available methods on rpc server %s", rpc_connect.system.listMethods())
-    rpc_connect.mark_presence_as_server(source_ip, source_port)
-
 
 def find_available(dest_ip, dest_port):
     """rpc call to find client's rpc availability"""
