@@ -72,18 +72,18 @@ class Handler(FileSystemEventHandler):
 class Server(Node):
     """Server class"""
 
-    def __init__(self, ip, port, watch_dirs, servers):
-        super(Server, self).__init__(ip, port, watch_dirs)
+    def __init__(self, username, port, watch_dirs, servers):
+        super(Server, self).__init__(username, port, watch_dirs)
         self.servers = servers
         self.mfiles = FilesPersistentSet(pkl_filename='node.pkl')  # set() #set of modified files
         self.rfiles = set()  # set of removed filess
         self.pulled_files = set()
         self.server_available = True
 
-    def push_file(self, filename, dest_file, dest_uname, dest_ip):
+    def push_file(self, filename, dest_file, passwd, dest_uname, dest_ip):
         """push file 'filename' to the destination"""
         command = "{} -q -p -l {} -pw {} {} {}@{}:{}".format(
-            PSCP_COMMAND[ENV], self.username, self.passwd,
+            PSCP_COMMAND[ENV], self.username, passwd,
             filename, dest_uname, dest_ip, dest_file).split()
         print(command)
         proc = subprocess.Popen(command, stdout=PIPE, stderr=PIPE, stdin=PIPE)
@@ -113,11 +113,14 @@ class Server(Node):
                 time.sleep(10)
                 for filedata in mfiles.list():
                     filename = filedata.name
-                    if not filename or '.swp' in filename:
+                    if not filename:
+                        continue
+                    if '.swp' in filename:
+                        mfiles.remove(filename)
                         continue
                     logger.info("push filedata object to server %s", filedata)
                     for server in self.servers:
-                        server_ip, server_port = server
+                        passwd, server_ip, server_port = server
                         # Add by daidv, only send file name alter for full path file to server
                         filedata_name = self.format_file_name(filedata.name)
                         server_uname, dest_file, mtime_server = rpc.req_push_file(server_ip, server_port, filedata_name)
@@ -129,7 +132,7 @@ class Server(Node):
                             continue
                         if dest_file is None:
                             continue
-                        push_status = self.push_file(filename, dest_file, server_uname, server_ip)
+                        push_status = self.push_file(filename, dest_file, passwd, server_uname, server_ip)
                         if (push_status < 0):
                             continue
                     mfiles.remove(filename)

@@ -23,16 +23,16 @@ def get_watch_dirs():
 
 def get_node():
     words = sync_config.get('syncit.node', 'node')
-    ip, port = words.split(',')
-    return (ip, port)
+    username, port = words.split(',')
+    return (username, port)
 
 
 def get_servers():
     servers = []
     for key, value in sync_config.items('syncit.servers'):
         words = value.split(',')
-        username, passwd, ip, port = [word.strip() for word in words]
-        servers.append((username, passwd, ip, port))
+        passwd, ip, port = [word.strip() for word in words]
+        servers.append((passwd, ip, port))
     return servers
 
 
